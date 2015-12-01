@@ -1,0 +1,82 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+body {
+  font: 16px 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  line-height: 1.5em;
+  background-color: #222;
+  color: #ccc;
+  margin: 0 auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-font-smoothing: antialiased;
+  -ms-font-smoothing: antialiased;
+  -o-font-smoothing: antialiased;
+  font-smoothing: antialiased;
+
+  /* overall text glow effect */
+  text-shadow:
+    0 0  7px  rgba(255, 255, 255, 0.8),
+    0 0 12px  rgba(255, 255, 255, 0.4);
+}
+
+::-webkit-scrollbar {
+  width: 12px;  /* for vertical scrollbars */
+  height: 12px; /* for horizontal scrollbars */
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(20, 20, 20, .5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 100, 100, 0.7);
+}
+
+button {
+  width: 70px;
+  height: 26px;
+  font-size: 15px ! important; /* important to need font size 18px from class fa */
+  color: #222;
+  border: 1px solid #111;
+  border-radius: 4px;
+  margin: 2px 5px;
+  padding: 0;
+  text-shadow:
+    0 0 10px #222;
+  box-shadow:
+    inset 0px 0px 4px 1px #222,
+    0px 0px 5px 0px rgba(200, 200, 200, .4);
+}
+
+button:hover {
+  background-color: #ddd;
+  border: 1px solid #151515;
+  color: #333;
+  text-shadow:
+    0 0 10px #333;
+  box-shadow:
+    inset 0px 0px 4px 1px #333,
+    0px 0px 5px 0px rgba(200, 200, 200, .4);
+}
+button:focus {
+  outline: none;
+}
+
+/* This is the main container for the game */
+.game {
+  position: absolute;
+  width: 320px;
+  height: 240px;
+  top: 50%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-50%);
+  overflow: hidden;
+}

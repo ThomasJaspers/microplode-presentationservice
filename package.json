@@ -1,0 +1,32 @@
+{
+  "name": "microplode-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Frontend for MicroPlode",
+  "scripts": {
+    "postinstall": "npm run make",
+    "clean": "rimraf elm-stuff/build-artifacts",
+    "make": "elm-make --yes --warn Main.elm --output microplode.js",
+    "clean-make": "npm run clean && npm run make",
+    "dev": "npm run clean-make && ELM_HOME=node_modules/elm/share elm-reactor",
+    "start": "npm run make && http-server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ThomasJaspers/microplode-frontend.git"
+  },
+  "author": "Bastian Krol <bastian.krol@web.de>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ThomasJaspers/microplode-frontend/issues"
+  },
+  "dependencies": {
+    "elm": "~0.16.0",
+    "font-awesome": "^4.5.0",
+    "http-server": "^0.8.5",
+    "normalize.css": "^3.0.3"
+  },
+  "devDependencies": {
+    "rimraf": "^2.4.4"
+  }
+}
