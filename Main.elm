@@ -1,18 +1,27 @@
 module Main (main) where
 
+
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Signal
 
-type alias Model = Int
+import MicroPlode.Arena as Arena
+import MicroPlode.Screen as Screen exposing (Screen)
+
+
+type alias Model =
+  { arena : Arena.Model
+  }
+
 
 type alias Context =
-  { view : String
+  { view : Screen
   }
 
 
 type Action
-  = NoOp
+  = ArenaAction Arena.Action
+  | NoOp
 
 
 {-|
@@ -20,7 +29,9 @@ Initializes the model and the context.
 -}
 init : (Model, Context)
 init =
-  (42, { view = "Welcome" })
+  ( { arena = Arena.init }
+  , { view = Screen.Game }
+  )
 
 
 {-|
@@ -31,6 +42,8 @@ update action (game, context) =
   case action of
     NoOp ->
       (game, context)
+    ArenaAction arenaAction ->
+      ({ game | arena = Arena.update arenaAction game.arena }, context)
 
 
 {-|
@@ -38,9 +51,10 @@ Renders the game view.
 -}
 view : Signal.Address Action -> (Model, Context) -> Html
 view address (game, context) =
-  div
-    [ class "game" ]
-    [ text "MicroPlode" ]
+  let
+    content = Arena.view (Signal.forwardTo address ArenaAction) game.arena
+  in
+    div [ class "game" ] [ content ]
 
 
 {-|
