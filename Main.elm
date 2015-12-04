@@ -3,6 +3,7 @@ module Main (main) where
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Json.Encode
 import Signal
 import SocketIO
 import Task exposing (Task, andThen)
@@ -139,14 +140,22 @@ port wsToServer : Signal (Task x ())
 port wsToServer =
   Signal.map
     (\click ->
-      socket `andThen` SocketIO.emit "click"
-        (  "{ \"x\": "      ++ toString click.x
-        ++ ", \"y\": "      ++ toString click.y
-        ++ ", \"player\": " ++ toString click.player
-        )
+      socket `andThen` SocketIO.emit "click" (encodeClick click)
     )
     arenaActionSignal
--- TODO Use http://package.elm-lang.org/packages/elm-lang/core/3.0.0/Json-Encode
+
+
+encodeClick : Click -> String
+encodeClick click =
+  let
+    object =
+      Json.Encode.object
+        [ ("x", Json.Encode.int click.x)
+        , ("y", Json.Encode.int click.y)
+        , ("player", Json.Encode.int click.player)
+        ]
+  in
+    Json.Encode.encode 0 object
 
 
 received : Signal.Mailbox String
