@@ -1,8 +1,8 @@
 {
-  "name": "microplode-frontend",
+  "name": "microplode-presentation-service",
   "version": "1.0.0",
   "private": true,
-  "description": "Frontend for MicroPlode",
+  "description": "Presentation service for MicroPlode",
   "main": "server.js",
   "scripts": {
     "postinstall": "npm run make",

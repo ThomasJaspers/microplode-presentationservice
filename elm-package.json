@@ -1,6 +1,6 @@
 {
     "version": "1.0.0",
-    "summary": "Frontend for MicroPlode",
+    "summary": "Presentation service for MicroPlode",
     "repository": "https://github.com/ThomasJaspers/microplode-frontend.git",
     "license": "ISC",
     "source-directories": [

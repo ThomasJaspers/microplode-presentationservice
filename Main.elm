@@ -99,7 +99,7 @@ arenaActionSignal =
 
 mergedSignal : Signal Action
 mergedSignal =
-  Signal.merge uiInputSignal wsFromServer
+  Signal.merge uiInputSignal updateBoardSignal
 
 
 {-|
@@ -158,17 +158,20 @@ encodeClick click =
     Json.Encode.encode 0 object
 
 
-received : Signal.Mailbox String
-received = Signal.mailbox ""
+updateBoardMailbox : Signal.Mailbox String
+updateBoardMailbox = Signal.mailbox ""
 
 
 {-|
 Incoming websocket mesages, server to browser.
 -}
-wsFromServer : Signal Action
-wsFromServer =
-  Signal.map (\message -> WebSocketMessageAction message) received.signal
+updateBoardSignal : Signal Action
+updateBoardSignal =
+  Signal.map
+    (\message -> WebSocketMessageAction message)
+    updateBoardMailbox.signal
 
 
-port responses : Task x ()
-port responses = socket `andThen` SocketIO.on "" received.address
+port updateBoardPort : Task x ()
+port updateBoardPort =
+  socket `andThen` SocketIO.on "update-board" updateBoardMailbox.address

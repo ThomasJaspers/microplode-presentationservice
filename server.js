@@ -5,10 +5,6 @@ var express = require('express')
 // TODO Move static assets to sub directory
 app.use(express.static('.'));
 
-app.get('/', function (req, res) {
-  res.send('Hello World!');
-});
-
 io.on('connection', function(socket) {
   console.log('MicroPlode client connected.');
 
@@ -18,13 +14,22 @@ io.on('connection', function(socket) {
 
   socket.on('click', function(data) {
     console.log('click:', data);
+    io.emit('update-board', [
+        { x: 0, y: 0, charge: 0 }
+      , { x: 1, y: 0, charge: 0 }
+      , { x: 2, y: 0, charge: 0 }
+      , { x: 0, y: 1, charge: 0 }
+      , { x: 1, y: 1, charge: 0 }
+      , { x: 2, y: 1, charge: 0 }
+    ]);
+    console.log('emitted');
   });
 
   socket.on('disconnect', function(socket) {
     console.log('MicroPlode client disconnected.');
   });
 
-  socket.send('Hey there, I am the MicroPlode websockets server. \'Sup?');
+  // socket.send('Hey there, I am the MicroPlode websockets server. \'Sup?');
 });
 
 var server = app.listen(3000, function () {
