@@ -11,6 +11,9 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
 
+import MicroPlode.Click as Click exposing (Click)
+
+
 type alias Model =
   { x : Int
   , y : Int
@@ -19,7 +22,7 @@ type alias Model =
 
 
 type Action
-  = Increment (Int, Int)
+  = Increment Click
 
 
 {-|
@@ -52,6 +55,6 @@ view address square =
   in
     td
       [ class "square"
-      , onClick address (Increment (square.x, square.y)) ]
+      , onClick address (Increment (Click.init square.x square.y 1)) ]
       [ chargeText ]
 

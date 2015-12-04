@@ -4,7 +4,10 @@ module Main (main) where
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Signal
+import SocketIO
+import Task exposing (Task, andThen)
 
+import MicroPlode.Click as Click exposing (Click)
 import MicroPlode.Arena as Arena
 import MicroPlode.Screen as Screen exposing (Screen)
 
@@ -21,7 +24,9 @@ type alias Context =
 
 type Action
   = ArenaAction Arena.Action
+  | WebSocketMessageAction String
   | NoOp
+
 
 
 {-|
@@ -39,12 +44,15 @@ Updates the current view on each signal tick.
 -}
 update : Action -> (Model, Context) -> (Model, Context)
 update action (game, context) =
-  case action of
+  (case action of
     NoOp ->
       (game, context)
     ArenaAction arenaAction ->
       ({ game | arena = Arena.update arenaAction game.arena }, context)
-
+    WebSocketMessageAction message ->
+      let _ = Debug.log "message: " message
+      in (game, context)
+  )
 
 {-|
 Renders the game view.
@@ -60,15 +68,37 @@ view address (game, context) =
 {-|
 The main mailbox that routes the signals from all UI input elements.
 -}
-mainMailbox : Signal.Mailbox Action
-mainMailbox = Signal.mailbox NoOp
+uiInputMailbox : Signal.Mailbox Action
+uiInputMailbox = Signal.mailbox NoOp
 
 
 {-|
-Merges the constant timed tick and the signal from UI input elements.
+The signal from UI input elements.
 -}
-mainSignal : Signal Action
-mainSignal = mainMailbox.signal
+uiInputSignal : Signal Action
+uiInputSignal = uiInputMailbox.signal
+
+
+{-|
+Filter & transform uiInputSignal so that it only contains mouse clicks on
+squares.
+-}
+arenaActionSignal : Signal Click
+arenaActionSignal =
+  let
+    filter action =
+      case action of
+        ArenaAction arenaAction -> Arena.actionsToCoordinates arenaAction
+        otherwise -> Nothing
+  in
+    Signal.filterMap filter { x = -1, y = -1, player = -1 } uiInputSignal
+-- TODO The default value is actually send to the server. How to get rid of
+-- that?
+
+
+mergedSignal : Signal Action
+mergedSignal =
+  Signal.merge uiInputSignal wsFromServer
 
 
 {-|
@@ -81,6 +111,55 @@ main =
       Signal.foldp
         update
         init
-        mainSignal
+        mergedSignal
   in
-    Signal.map (view mainMailbox.address) model
+    Signal.map (view uiInputMailbox.address) model
+
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- Socket.IO handling:
+--------------------------------------------------------------------------------
+
+socket : Task x SocketIO.Socket
+socket = SocketIO.io "http://localhost:3001" SocketIO.defaultOptions
+
+
+{-|
+Port for the initial handshake.
+-}
+port initial : Task x ()
+port initial = socket `andThen` SocketIO.emit "" "Hello I am the MicroPlode client! :-)"
+
+
+{-|
+Outgoing websocket mesages, browser to server.
+-}
+port wsToServer : Signal (Task x ())
+port wsToServer =
+  Signal.map
+    (\click ->
+      socket `andThen` SocketIO.emit "click"
+        (  "{ \"x\": "      ++ toString click.x
+        ++ ", \"y\": "      ++ toString click.y
+        ++ ", \"player\": " ++ toString click.player
+        )
+    )
+    arenaActionSignal
+-- TODO Use http://package.elm-lang.org/packages/elm-lang/core/3.0.0/Json-Encode
+
+
+received : Signal.Mailbox String
+received = Signal.mailbox ""
+
+
+{-|
+Incoming websocket mesages, server to browser.
+-}
+wsFromServer : Signal Action
+wsFromServer =
+  Signal.map (\message -> WebSocketMessageAction message) received.signal
+
+
+port responses : Task x ()
+port responses = socket `andThen` SocketIO.on "" received.address

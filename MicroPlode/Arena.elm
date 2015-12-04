@@ -3,14 +3,15 @@ module MicroPlode.Arena
   , Model
   , init
   , view
-  , update) where
+  , update
+  , actionsToCoordinates) where
 
 
 import Array exposing (Array)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 
-
+import MicroPlode.Click as Click exposing (Click)
 import MicroPlode.Square as Square
 
 
@@ -45,7 +46,7 @@ update action arena =
     Click increment ->
       let
         -- deconstruct Square.Increment Action to get x/y coordinates
-        (Square.Increment (x, y)) = increment
+        (Square.Increment {x, y, player}) = increment
         row = Array.get y arena |> Maybe.withDefault Array.empty
         square = Array.get x row |> Maybe.withDefault (Square.init 0 0)
         -- update (create new) square
@@ -78,3 +79,9 @@ renderRow address row =
   in
     tr [] tds
 
+
+actionsToCoordinates : Action -> Maybe Click
+actionsToCoordinates action =
+  case action of
+     Click (Square.Increment click) -> Just click
+     -- otherwise -> Nothing
