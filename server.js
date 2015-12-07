@@ -2,8 +2,8 @@ var express = require('express')
   , app = express()
   , io = require('socket.io')(3001);
 
-// TODO Move static assets to sub directory
-app.use(express.static('.'));
+app.use(express.static(__dirname + '/public'));
+app.use('/assets', express.static(__dirname + '/node_modules'));
 
 io.on('connection', function(socket) {
   console.log('MicroPlode client connected.');
@@ -28,10 +28,11 @@ io.on('connection', function(socket) {
   socket.on('disconnect', function(socket) {
     console.log('MicroPlode client disconnected.');
   });
-
-  // socket.send('Hey there, I am the MicroPlode websockets server. \'Sup?');
 });
 
+/*
+ * Start Express server (serving static assets.
+ */
 var server = app.listen(3000, function () {
   var port = server.address().port;
   console.log('MicroPlode presentation service listening at port', port);

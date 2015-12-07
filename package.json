@@ -7,10 +7,9 @@
   "scripts": {
     "postinstall": "npm run make",
     "clean": "rimraf elm-stuff/build-artifacts",
-    "make": "elm-make --yes --warn Main.elm --output microplode.js",
+    "make": "elm-make --yes --warn elm/Main.elm --output public/microplode.js",
     "clean-make": "npm run clean && npm run make",
-    "dev": "npm run clean-make && ELM_HOME=node_modules/elm/share elm-reactor",
-    "start": "npm run make && http-server",
+    "start": "npm run make && node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -27,7 +26,6 @@
     "elm": "~0.16.0",
     "express": "^4.13.3",
     "font-awesome": "^4.5.0",
-    "http-server": "^0.8.5",
     "normalize.css": "^3.0.3",
     "socket.io": "^1.3.7"
   },

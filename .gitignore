@@ -1,5 +1,5 @@
 node_modules/
 elm-stuff/
-microplode.js
-elm.js
+public/microplode.js
+public/elm.js
 microplode-presentationservice.iml

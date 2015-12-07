@@ -4,7 +4,7 @@
     "repository": "https://github.com/ThomasJaspers/microplode-frontend.git",
     "license": "ISC",
     "source-directories": [
-        "."
+        "elm"
     ],
     "exposed-modules": [],
     "dependencies": {

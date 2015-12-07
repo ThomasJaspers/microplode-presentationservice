@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-find . -iname \*.elm | entr npm run make
+find elm -iname \*.elm | entr npm run make
