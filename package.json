@@ -3,13 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "description": "Presentation service for MicroPlode",
-  "main": "server.js",
+  "main": "index.js",
   "scripts": {
     "postinstall": "npm run make",
     "clean": "rimraf elm-stuff/build-artifacts",
     "make": "elm-make --yes --warn elm/Main.elm --output public/microplode.js",
     "clean-make": "npm run clean && npm run make",
-    "start": "npm run make && node server.js",
+    "start": "npm run make && node index.js",
+    "dev": "./watch-elm.sh & nodemon --watch backend .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

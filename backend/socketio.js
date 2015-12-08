@@ -1,10 +1,10 @@
-var express = require('express')
-  , app = express()
-  , io = require('socket.io')(3001);
+'use strict';
 
-app.use(express.static(__dirname + '/public'));
-app.use('/assets', express.static(__dirname + '/node_modules'));
+const io = require('socket.io')(3001);
 
+/*
+ * Socket.io connection.
+ */
 io.on('connection', function(socket) {
   console.log('MicroPlode client connected.');
 
@@ -30,10 +30,4 @@ io.on('connection', function(socket) {
   });
 });
 
-/*
- * Start Express server (serving static assets.
- */
-var server = app.listen(3000, function () {
-  var port = server.address().port;
-  console.log('MicroPlode presentation service listening at port', port);
-});
+

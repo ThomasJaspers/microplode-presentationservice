@@ -1,26 +1,26 @@
 MicroPlode Frontend
 ===================
 
+This service connects the other MicroPlode services to the frontend. It is implemented in Node.js and has a frontend part written in Elm. You need to have Node.js version 4 or later installed.
+
+The services has two responsibilities:
+
+* Serving the static assets (HTML, CSS, JavaScript)
+* Receive AMQP messages from other services and forward them to the frontend via Socket.io.
+
 Setup
 -----
-* `npm install` to install the Elm platform from npm as a local dependency. This also runs `elm-make` once to build `microplode.js`.
 
+* `npm install` to install all dependencies. This also installs the Elm platform (which is needed to build the frontend assets) from npm as a local dependency. Finally, npm install runs`elm-make` as a post install hook once to build the `public/microplode.js`.
 
-Development Mode
+npm run scripts
 ----------------
 
-* `npm run dev` starts elm-reactor with the correct ELM_HOME set (alternatively, you could do `ELM_HOME=node_modules/elm/share node_modules/.bin/elm-reactor` manually).
-* Go to <http://localhost:8000/index.debug.html>.
-* You now see the Elm app including your custom HTML and CSS.
-    * Live reload should work (but unfortunately it doesn't seems Elm 0.16 broke it to some extent?)
-    * Live reload does *not* work for changes in the static HTML or CSS, you'll have to do trigger a browser refresh manually for those.
-    * You can use the integrated Elm debugger.
-
-
-Pseudo Production Mode
-----------------------
-
-* `npm start` starts the frontend in "production mode" by simply building it with `elm-make` and then serving it via [http-server](https://github.com/indexzero/http-server).
-* Go to <http://localhost:8080/index.html>.
-    * This is the production view. No live reload, no debugger.
-    * If you change the code, you need to rebuild `microplode.js` by executing `npm run make` or by stopping the running http-server and execute `npm start` again (which will also trigger `npm run make`).
+* `npm run make` compiles the Elm sources into JavaScript.
+* `npm run clean` removes artifacts from a previous build.
+* `npm run clean-make` triggers `npm run clean` first, then `npm run make`.
+* `npm run start` compiles the Elm sources once and then starts the service.
+* `npm run dev` starts the server in dev mode. In particular:
+    * Starts nodemon to watch the Node.js sources (which will restart the server when the sources change) and, simultaneously,
+    * starts a script that watches the Elm sources via entr, which will recompile the Elm stuff when it changes.
+    * You need to have nodemon and entr installed for this to work.
