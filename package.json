@@ -11,6 +11,7 @@
     "clean-make": "npm run clean && npm run make",
     "start": "npm run make && node index.js",
     "dev": "./watch-elm.sh & nodemon --watch backend .",
+    "debug": "./watch-elm.sh & node debug index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

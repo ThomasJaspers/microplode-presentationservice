@@ -1,10 +1,10 @@
 'use strict';
 
 const express = require('express')
-    , path = require('path');
+    , path = require('path')
+    , amqpConnector = require('./amqp-connector');
 
-require('./amqp');
-require('./socketio');
+amqpConnector.start();
 
 const app = express();
 
