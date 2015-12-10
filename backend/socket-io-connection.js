@@ -18,13 +18,8 @@ class SocketIoConnection {
 
     this.socket.on('click', data => {
       console.log('click:', data);
-      this.io.emit('pseudo-test-event', {
-        foo: 'bar',
-      });
-      // TODO Instead of emitting to the websocket we just need to send a
-      // message via AMQP
-      // amqpConnector.onClick(data);
-      console.log('emitted');
+       amqpConnector.onClick(data);
+      console.log('sent message to AMQP');
     });
 
     this.socket.on('disconnect', socket => {

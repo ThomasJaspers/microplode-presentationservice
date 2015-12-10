@@ -7,15 +7,28 @@
 const util = require('util')
     , amqp = require('amqp')
     , connection = amqp.createConnection({ host: 'localhost' })
-    , boardUpdateQueue = 'microplode-board-update-queue'
     , socketIoHandler = require('./socket-io-handler');
+
+const mqNames = {
+  boardUpdates: 'microplode.board-update-queue',
+  moves: 'microplode.move-exchange',
+};
+
+const mqHandles = {};
 
 exports.start = function() {
   establishConnection();
 };
 
-exports.onClick = function(data) {
-  console.log('amqp-connector#onClick', data);
+exports.onClick = function(message) {
+  mqHandles.moves.publish('', message, {}, errorFlag => {
+    if (!errorFlag) {
+      console.log('amqp-connector#onClick published -> success', message);
+    } else {
+      console.log('amqp-connector#onClick published -> error', message);
+    }
+  });
+  console.log('amqp-connector#onClick published', message);
 };
 
 function establishConnection() {
@@ -24,20 +37,38 @@ function establishConnection() {
     console.log('AMQP connection established');
     socketIoHandler.start();
 
-    connection.queue(boardUpdateQueue, function(queue) {
-      console.log('Listening to AMQP queue ' + boardUpdateQueue);
+    connectToBoardUpdateQueue();
+    connectToMoveExchange();
+    setupErrorHandler();
+  });
+}
 
-      // Catch all messages
-      queue.bind('#');
+function connectToBoardUpdateQueue() {
+  connection.queue(mqNames.boardUpdates, function(queue) {
+    console.log('Listening to AMQP queue ' + mqNames.boardUpdates);
+    mqHandles.boardUpdates = queue;
 
-      // Receive messages
-      queue.subscribe(message => {
-        onMessage(message);
-      });
+    // Catch all messages
+    mqHandles.boardUpdates.bind('#');
+
+    // Receive messages
+    mqHandles.boardUpdates.subscribe(message => {
+      onMessage(message);
     });
   });
+}
 
-  // Error handler - without this, errors during message processing are silently
+function connectToMoveExchange() {
+  connection.exchange(mqNames.moves, {}, function(exchange) {
+    mqHandles.moves = exchange;
+    mqHandles.moves.on('open', function() {
+      console.log('Connected to AMQP exchange ' + mqNames.moves);
+    });
+  });
+}
+
+function setupErrorHandler() {
+  // Without an error handler, errors during message processing are silently
   // discarded the connection is simply reset.
   connection.on('error', function(err) {
     console.error('Could not process message');
