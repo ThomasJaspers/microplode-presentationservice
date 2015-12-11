@@ -4,14 +4,14 @@
  * RabbitMQ connection
  */
 
-const util = require('util')
-    , amqp = require('amqp')
+const amqp = require('amqp')
     , connection = amqp.createConnection({ host: 'localhost' })
-    , socketIoHandler = require('./socket-io-handler');
+    , socketIoHandler = require('./socket-io-handler')
+    , util = require('util');
 
 const mqNames = {
-  boardUpdates: 'microplode.board-update-queue',
-  moves: 'microplode.move-exchange',
+  boardUpdates: 'microplode.boardservice.presentationservice.queue',
+  moves: 'microplode.presentationservice.gameservice.exchange',
 };
 
 const mqHandles = {};
@@ -20,15 +20,27 @@ exports.start = function() {
   establishConnection();
 };
 
-exports.onClick = function(message) {
-  mqHandles.moves.publish('', message, {}, errorFlag => {
+exports.sendMoveEvent = function(move) {
+  console.log('move in', move);
+  debugger;
+  let moveEvent = {
+    event: {
+      type: 'move',
+      playerId: move.player,
+      'field-row': move.y,
+      'field-col': move.x,
+    }
+  };
+  debugger;
+  console.log('move event', moveEvent);
+  mqHandles.moves.publish('', moveEvent, {}, errorFlag => {
     if (!errorFlag) {
-      console.log('amqp-connector#onClick published -> success', message);
+      console.log('amqp-connector#onClick published -> success');
     } else {
-      console.log('amqp-connector#onClick published -> error', message);
+      console.log('amqp-connector#onClick published -> error');
     }
   });
-  console.log('amqp-connector#onClick published', message);
+  console.log('amqp-connector#onClick published', moveEvent);
 };
 
 function establishConnection() {
@@ -45,15 +57,15 @@ function establishConnection() {
 
 function connectToBoardUpdateQueue() {
   connection.queue(mqNames.boardUpdates, function(queue) {
-    console.log('Listening to AMQP queue ' + mqNames.boardUpdates);
+    console.log('listening to AMQP queue ' + mqNames.boardUpdates);
     mqHandles.boardUpdates = queue;
 
     // Catch all messages
     mqHandles.boardUpdates.bind('#');
 
     // Receive messages
-    mqHandles.boardUpdates.subscribe(message => {
-      onMessage(message);
+    mqHandles.boardUpdates.subscribe(boardUpdateEvent => {
+      onBoardUpdate(boardUpdateEvent);
     });
   });
 }
@@ -62,7 +74,7 @@ function connectToMoveExchange() {
   connection.exchange(mqNames.moves, {}, function(exchange) {
     mqHandles.moves = exchange;
     mqHandles.moves.on('open', function() {
-      console.log('Connected to AMQP exchange ' + mqNames.moves);
+      console.log('connected to AMQP exchange ' + mqNames.moves);
     });
   });
 }
@@ -71,27 +83,48 @@ function setupErrorHandler() {
   // Without an error handler, errors during message processing are silently
   // discarded the connection is simply reset.
   connection.on('error', function(err) {
-    console.error('Could not process message');
+    console.error('could not process message');
     console.error(err.stack);
   });
 }
 
-function onMessage(message) {
-  let content;
-  if ((message.hasOwnProperty('contentType') &&
-      !message.contentType) ||
-    util.isBuffer(message.data)) {
+function onBoardUpdate(boardUpdateEvent) {
+  let boardUpdateContent;
+  if ((boardUpdateEvent.hasOwnProperty('contentType') &&
+      !boardUpdateEvent.contentType) ||
+    util.isBuffer(boardUpdateEvent.data)) {
     // Partners should actualy send with content type application/json so
     // this should not happen.
-    content = message.data.toString('utf8');
-    console.log('Received AMQP message without content type or with ' +
-      'wrong content type "' + message.contentType + '": ' + content);
+    boardUpdateContent = boardUpdateEvent.data.toString('utf8');
+    console.log('received AMQP message without content type or with ' +
+      'wrong content type "' + boardUpdateEvent.contentType + '": ' +
+      boardUpdateContent);
     return;
   } else {
-    content = message;
+    boardUpdateContent = boardUpdateEvent;
   }
-  // Print messages to stdout
-  console.log('Received AMQP message:');
-  console.log(content);
-  socketIoHandler.send(content);
+  console.log('received board changed event via AMQP.');
+
+  if (!boardUpdateContent.event ||
+      !boardUpdateContent.event.type ||
+      boardUpdateContent.event.type !== 'board-changed-game' ||
+      !util.isArray(boardUpdateContent.event.fieldList)) {
+    console.log('ignoring invalid board changed message');
+    console.log(boardUpdateContent);
+    return;
+  }
+
+  let newBoard = [];
+  for (let row = 0; row < 10; row++) {
+    newBoard.push(new Array(10));
+  }
+
+  console.log('new board (1)', newBoard);
+
+  boardUpdateContent.event.fieldList.forEach(field => {
+    newBoard[field.row][field.col] = field;
+  });
+
+  console.log('new board (2)', newBoard);
+  socketIoHandler.send(boardUpdateContent);
 }

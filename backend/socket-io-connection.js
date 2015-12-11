@@ -17,9 +17,14 @@ class SocketIoConnection {
     });
 
     this.socket.on('click', data => {
-      console.log('click:', data);
-       amqpConnector.onClick(data);
-      console.log('sent message to AMQP');
+      try {
+        let clickMessage = JSON.parse(data);
+        console.log('click:', clickMessage);
+        amqpConnector.sendMoveEvent(clickMessage);
+        console.log('sent message to AMQP');
+      } catch (e) {
+        console.error('unparseable Socket.io message: ' + data + ' -- ', e);
+      }
     });
 
     this.socket.on('disconnect', socket => {
