@@ -114,17 +114,33 @@ function onBoardUpdate(boardUpdateEvent) {
     return;
   }
 
+  // create empty board as default in case the board service only sends
+  // partial board data.
   let newBoard = [];
   for (let row = 0; row < 10; row++) {
-    newBoard.push(new Array(10));
+    let rowData = [];
+    for (let column = 0; column < 10; column++) {
+      rowData.push({ x: column, y: row, load: 0 });
+    }
+    newBoard.push(rowData);
   }
 
-  console.log('new board (1)', newBoard);
-
   boardUpdateContent.event.fieldList.forEach(field => {
-    newBoard[field.row][field.col] = field;
+    if (field.playerId && field.playerId === '') {
+      delete field.playerId;
+    }
+    newBoard[field.row][field.col] = {
+      x: field.col,
+      y: field.row,
+      load: field.load,
+    };
+    if (field.playerId) {
+      newBoard[field.row][field.col].playerId = parseInt(field.playerId, 10);
+    }
   });
 
-  console.log('new board (2)', newBoard);
-  socketIoHandler.send(boardUpdateContent);
+  socketIoHandler.send({
+    event: 'update-board',
+    board: newBoard,
+  });
 }
