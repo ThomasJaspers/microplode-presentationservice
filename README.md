@@ -12,6 +12,8 @@ Setup
 -----
 
 * `npm install` to install all dependencies. This also installs the Elm platform (which is needed to build the frontend assets) from npm as a local dependency. Finally, npm install runs`elm-make` as a post install hook once to build the `public/microplode.js`.
+* `npm start` starts the service.
+* The service is then available at <http://localhost:3000>.
 
 npm run scripts
 ----------------
@@ -24,3 +26,5 @@ npm run scripts
     * Starts nodemon to watch the Node.js sources (which will restart the server when the sources change) and, simultaneously,
     * starts a script that watches the Elm sources via entr, which will recompile the Elm stuff when it changes.
     * You need to have nodemon and entr installed for this to work.
+
+
