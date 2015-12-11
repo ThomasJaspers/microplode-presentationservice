@@ -22,7 +22,6 @@ exports.start = function() {
 
 exports.sendMoveEvent = function(move) {
   console.log('move in', move);
-  debugger;
   let moveEvent = {
     event: {
       type: 'move',
@@ -31,7 +30,6 @@ exports.sendMoveEvent = function(move) {
       'field-col': move.x,
     }
   };
-  debugger;
   console.log('move event', moveEvent);
   mqHandles.moves.publish('', moveEvent, {}, errorFlag => {
     if (!errorFlag) {
@@ -56,7 +54,9 @@ function establishConnection() {
 }
 
 function connectToBoardUpdateQueue() {
-  connection.queue(mqNames.boardUpdates, function(queue) {
+  connection.queue(mqNames.boardUpdates, {
+      autoDelete: false,
+    }, function(queue) {
     console.log('listening to AMQP queue ' + mqNames.boardUpdates);
     mqHandles.boardUpdates = queue;
 
@@ -107,7 +107,7 @@ function onBoardUpdate(boardUpdateEvent) {
 
   if (!boardUpdateContent.event ||
       !boardUpdateContent.event.type ||
-      boardUpdateContent.event.type !== 'board-changed-game' ||
+      boardUpdateContent.event.type !== 'board-changed' ||
       !util.isArray(boardUpdateContent.event.fieldList)) {
     console.log('ignoring invalid board changed message');
     console.log(boardUpdateContent);
