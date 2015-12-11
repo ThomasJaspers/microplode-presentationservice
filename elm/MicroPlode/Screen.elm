@@ -1,4 +1,6 @@
 module MicroPlode.Screen where
 
-type Screen = Game
+type Screen =
+    Welcome
+  | Board
 

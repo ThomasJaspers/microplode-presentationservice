@@ -3,6 +3,7 @@ module Main (main) where
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 import Json.Encode
 import Signal
 import SocketIO
@@ -19,12 +20,13 @@ type alias Model =
 
 
 type alias Context =
-  { view : Screen
+  { screen : Screen
   }
 
 
 type Action
-  = BoardAction Board.Action
+  = StartGame
+  | BoardAction Board.Action
   | WebSocketMessageAction String
   | NoOp
 
@@ -36,7 +38,7 @@ Initializes the model and the context.
 init : (Model, Context)
 init =
   ( { board = Board.init }
-  , { view = Screen.Game }
+  , { screen = Screen.Welcome }
   )
 
 
@@ -48,6 +50,9 @@ update action (game, context) =
   (case action of
     NoOp ->
       (game, context)
+    -- TODO Also send POST request to service
+    StartGame ->
+      (game, { context | screen = Screen.Board })
     BoardAction boardAction ->
       ({ game | board = Board.update boardAction game.board }, context)
     WebSocketMessageAction message ->
@@ -62,10 +67,34 @@ update action (game, context) =
   )
 
 {-|
-Renders the game view.
+Renders the game.
 -}
 view : Signal.Address Action -> (Model, Context) -> Html
 view address (game, context) =
+  case context.screen of
+    Screen.Welcome -> renderWelcome address
+    Screen.Board -> renderBoard address game
+
+
+renderWelcome : Signal.Address Action -> Html
+renderWelcome address =
+  let
+    content =
+      button
+        [
+          onClick address StartGame
+        , style
+          [ ("font-size", "large")
+          , ("width", "200px")
+          , ("height", "50px") ]
+        ]
+        [ text "START GAME" ]
+  in
+    div [ class "game" ] [ content ]
+
+
+renderBoard : Signal.Address Action -> Model -> Html
+renderBoard address game =
   let
     content = Board.view (Signal.forwardTo address BoardAction) game.board
   in
