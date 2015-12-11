@@ -1,15 +1,17 @@
 module MicroPlode.Board
-  ( Action
+  ( Action(UpdateFromWebSocket)
   , Model
   , init
   , view
   , update
-  , actionsToCoordinates) where
+  , actionsToCoordinates
+  , decodeBoard) where
 
 
 import Array exposing (Array)
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Json.Decode as Json exposing ((:=))
 
 import MicroPlode.Click as Click exposing (Click)
 import MicroPlode.Square as Square
@@ -18,8 +20,9 @@ import MicroPlode.Square as Square
 type alias Model = Array (Array Square.Model)
 
 
-type Action
-  = Click Square.Action
+type Action =
+    Click Square.Action
+  | UpdateFromWebSocket String
 
 
 initRow : Int -> Array Square.Model
@@ -43,6 +46,14 @@ Updates the board.
 update : Action -> Model -> Model
 update action board =
   case action of
+    UpdateFromWebSocket webSocketMessage ->
+      decodeBoard webSocketMessage
+    -- TODO
+    -- We only accept full updates from the board service, so the update
+    -- on single click needs to be removed/ignored
+    Click increment ->
+      board
+    {-
     Click increment ->
       let
         -- deconstruct Square.Increment Action to get x/y coordinates
@@ -56,6 +67,7 @@ update action board =
       in
         -- set new row into board
         Array.set y row' board
+    -}
 
 
 {-|
@@ -84,4 +96,31 @@ actionsToCoordinates : Action -> Maybe Click
 actionsToCoordinates action =
   case action of
      Click (Square.Increment click) -> Just click
-     -- otherwise -> Nothing
+     otherwise -> Nothing
+
+
+decodeBoard : String -> Model
+decodeBoard json =
+  let
+    result = Json.decodeString webSocketMessageDecoder json
+  in
+    case result of
+      Ok model -> model
+      Err error ->
+        let _ = Debug.log "Board: JSON decode error" error
+        in init
+
+
+webSocketMessageDecoder : Json.Decoder Model
+webSocketMessageDecoder =
+  Json.at ["board"] boardDecoder
+
+
+boardDecoder : Json.Decoder Model
+boardDecoder =
+  Json.array rowDecoder
+
+
+rowDecoder : Json.Decoder (Array Square.Model)
+rowDecoder =
+  Json.array Square.squareDecoder

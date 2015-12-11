@@ -3,13 +3,15 @@ module MicroPlode.Square
   , Model
   , init
   , view
-  , update) where
+  , update
+  , decodeSquare
+  , squareDecoder) where
 
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-
+import Json.Decode as Json exposing ((:=))
 
 import MicroPlode.Click as Click exposing (Click)
 
@@ -17,7 +19,8 @@ import MicroPlode.Click as Click exposing (Click)
 type alias Model =
   { x : Int
   , y : Int
-  , charge : Int
+  , load : Int
+  , playerId : Maybe Int
   }
 
 
@@ -32,29 +35,59 @@ init : Int -> Int -> Model
 init x y =
   { x = x
   , y = y
-  , charge = 0
+  , load = 0
+  , playerId = Nothing
   }
 
 
+-- TODO
+-- We only accept full updates from the board service, thus a single square
+-- does not need an update function
 {-|
-Updates the square's charge.
+Updates the square's load.
 -}
 update : Action -> Model -> Model
 update action square =
   case action of
     Increment _ ->
-      { square | charge = square.charge + 1 }
+      { square | load = square.load + 1 }
 
 
 view : Signal.Address Action -> Model -> Html
 view address square =
-  let chargeText =
-    if square.charge == 0
-    then text "o"
-    else square.charge |> toString |> text
+  let
+    loadText =
+      if square.load == 0
+      then text "o"
+      else square.load |> toString |> text
+    player =
+      case square.playerId of
+        Just 1 -> " player1"
+        Just 2 -> " player2"
+        _ -> ""
   in
     td
-      [ class "square"
+      [ class ("square " ++ player)
       , onClick address (Increment (Click.init square.x square.y 1)) ]
-      [ chargeText ]
+      [ loadText ]
 
+
+decodeSquare : String -> Model
+decodeSquare json =
+  let
+    result = Json.decodeString squareDecoder json
+  in
+    case result of
+      Ok model -> model
+      Err error ->
+        let _ = Debug.log "Square: JSON decode error" error
+        in init -1 -1
+
+
+squareDecoder : Json.Decoder Model
+squareDecoder =
+  Json.object4 Model
+  ("x" := Json.int)
+  ("y" := Json.int)
+  ("load" := Json.int)
+  (Json.maybe ("playerId" := Json.int))

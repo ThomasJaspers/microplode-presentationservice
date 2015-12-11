@@ -86,3 +86,11 @@ button:focus {
   height: 30px;
   text-align: center;
 }
+
+.square.player1 {
+  color: red;
+}
+
+.square.player2 {
+  color: blue;
+}

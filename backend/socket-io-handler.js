@@ -14,7 +14,7 @@ exports.start = function() {
 exports.registerConnection = function(connection) {
   connections.push(connection);
   console.log('Client connected. ' + connections.length + ' connected ' +
-      'clients in.total.');
+      'clients in total.');
 };
 
 exports.deregisterConnection = function(connection) {

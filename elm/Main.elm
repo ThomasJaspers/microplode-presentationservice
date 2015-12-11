@@ -51,8 +51,14 @@ update action (game, context) =
     BoardAction boardAction ->
       ({ game | board = Board.update boardAction game.board }, context)
     WebSocketMessageAction message ->
-      let _ = Debug.log "message: " message
-      in (game, context)
+      let
+        _ = Debug.log "websocket message: " message
+        action : Board.Action
+        action = Board.UpdateFromWebSocket message
+        newBoard : Board.Model
+        newBoard = Board.update action game.board
+      in
+        ({ game | board = newBoard }, context)
   )
 
 {-|
