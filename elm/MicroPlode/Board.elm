@@ -1,4 +1,4 @@
-module MicroPlode.Arena
+module MicroPlode.Board
   ( Action
   , Model
   , init
@@ -29,7 +29,7 @@ initRow y =
 
 
 {-|
-Initializes the arena.
+Initializes the board.
 -}
 init : Model
 init =
@@ -38,38 +38,38 @@ init =
 
 
 {-|
-Updates the arena.
+Updates the board.
 -}
 update : Action -> Model -> Model
-update action arena =
+update action board =
   case action of
     Click increment ->
       let
         -- deconstruct Square.Increment Action to get x/y coordinates
         (Square.Increment {x, y, player}) = increment
-        row = Array.get y arena |> Maybe.withDefault Array.empty
+        row = Array.get y board |> Maybe.withDefault Array.empty
         square = Array.get x row |> Maybe.withDefault (Square.init 0 0)
         -- update (create new) square
         square' = Square.update increment square
         -- create new row with new square
         row' = Array.set x square' row
       in
-        -- set new row into arena
-        Array.set y row' arena
+        -- set new row into board
+        Array.set y row' board
 
 
 {-|
-Renders the arena.
+Renders the board.
 -}
 view : Signal.Address Action -> Model -> Html
-view address arena =
+view address board =
   let
-    listOfRowArrays = Array.toList arena
+    listOfRowArrays = Array.toList board
     listOfRowLists = List.map Array.toList listOfRowArrays
     renderedRows = listOfRowLists
       |> List.map (renderRow address)
   in
-    table [ class "arena" ] renderedRows
+    table [ class "board" ] renderedRows
 
 
 renderRow : Signal.Address Action -> List Square.Model -> Html

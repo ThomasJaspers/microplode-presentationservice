@@ -9,12 +9,12 @@ import SocketIO
 import Task exposing (Task, andThen)
 
 import MicroPlode.Click as Click exposing (Click)
-import MicroPlode.Arena as Arena
+import MicroPlode.Board as Board
 import MicroPlode.Screen as Screen exposing (Screen)
 
 
 type alias Model =
-  { arena : Arena.Model
+  { board : Board.Model
   }
 
 
@@ -24,7 +24,7 @@ type alias Context =
 
 
 type Action
-  = ArenaAction Arena.Action
+  = BoardAction Board.Action
   | WebSocketMessageAction String
   | NoOp
 
@@ -35,7 +35,7 @@ Initializes the model and the context.
 -}
 init : (Model, Context)
 init =
-  ( { arena = Arena.init }
+  ( { board = Board.init }
   , { view = Screen.Game }
   )
 
@@ -48,8 +48,8 @@ update action (game, context) =
   (case action of
     NoOp ->
       (game, context)
-    ArenaAction arenaAction ->
-      ({ game | arena = Arena.update arenaAction game.arena }, context)
+    BoardAction boardAction ->
+      ({ game | board = Board.update boardAction game.board }, context)
     WebSocketMessageAction message ->
       let _ = Debug.log "message: " message
       in (game, context)
@@ -61,7 +61,7 @@ Renders the game view.
 view : Signal.Address Action -> (Model, Context) -> Html
 view address (game, context) =
   let
-    content = Arena.view (Signal.forwardTo address ArenaAction) game.arena
+    content = Board.view (Signal.forwardTo address BoardAction) game.board
   in
     div [ class "game" ] [ content ]
 
@@ -84,12 +84,12 @@ uiInputSignal = uiInputMailbox.signal
 Filter & transform uiInputSignal so that it only contains mouse clicks on
 squares.
 -}
-arenaActionSignal : Signal Click
-arenaActionSignal =
+boardActionSignal : Signal Click
+boardActionSignal =
   let
     filter action =
       case action of
-        ArenaAction arenaAction -> Arena.actionsToCoordinates arenaAction
+        BoardAction boardAction -> Board.actionsToCoordinates boardAction
         otherwise -> Nothing
   in
     Signal.filterMap filter { x = -1, y = -1, player = -1 } uiInputSignal
@@ -142,7 +142,7 @@ port wsToServer =
     (\click ->
       socket `andThen` SocketIO.emit "click" (encodeClick click)
     )
-    arenaActionSignal
+    boardActionSignal
 
 
 encodeClick : Click -> String
