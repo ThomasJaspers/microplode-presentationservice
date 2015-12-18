@@ -1,6 +1,7 @@
 module Main (main) where
 
 
+import Effects exposing (Effects)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -31,7 +32,6 @@ type Action
   | NoOp
 
 
-
 {-|
 Initializes the model and the context.
 -}
@@ -45,16 +45,17 @@ init =
 {-|
 Updates the current view on each signal tick.
 -}
-update : Action -> (Model, Context) -> (Model, Context)
+update : Action -> (Model, Context) -> (Model, Context, Effects Action)
 update action (game, context) =
   (case action of
     NoOp ->
-      (game, context)
-    -- TODO Also send POST request to service
+      (game, context, Effects.none)
     StartGame ->
-      (game, { context | screen = Screen.Board })
+      (game, { context | screen = Screen.Board }, Effects.none)
+    -- TODO Also send POST request to service
     BoardAction boardAction ->
-      ({ game | board = Board.update boardAction game.board }, context)
+
+      ({ game | board = Board.update boardAction game.board }, context, Effects.none)
     WebSocketMessageAction message ->
       let
         _ = Debug.log "websocket message: " message
@@ -63,8 +64,25 @@ update action (game, context) =
         newBoard : Board.Model
         newBoard = Board.update action game.board
       in
-        ({ game | board = newBoard }, context)
+        ({ game | board = newBoard }, context, Effects.none)
   )
+
+
+update2 : Action -> (Model, Context) -> (Model, Context)
+update2 action (game, context) =
+  let
+    (game', context', _) = update action (game, context)
+  in
+    (game', context')
+
+
+doPostStartGame : Effects Action
+doPostStartGame =
+  Http.post null "/game" Http.empty
+    |> Task.toMaybe
+    |> Task.map NewGif
+    |> Effects.task
+
 
 {-|
 Renders the game.
@@ -82,6 +100,7 @@ renderWelcome address =
     content =
       button
         [
+          -- TODO Send HTTP POST to /game when clicking the button
           onClick address StartGame
         , style
           [ ("font-size", "large")
@@ -145,7 +164,7 @@ main =
   let
     model =
       Signal.foldp
-        update
+        update2
         init
         mergedSignal
   in

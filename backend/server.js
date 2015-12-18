@@ -16,6 +16,11 @@ const baseDir = path.resolve(__dirname, '..')
 app.use(express.static(publicDir));
 app.use('/assets', express.static(nodeModulesDir));
 
+// TODO Remove dummy post handler
+app.post('/game', function(req, res) {
+  res.status(303).location('/game/1').send();
+});
+
 /*
  * Start Express server (serving static assets.
  */
