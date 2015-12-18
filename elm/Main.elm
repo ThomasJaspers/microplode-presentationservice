@@ -9,7 +9,7 @@ import Signal
 import SocketIO
 import Task exposing (Task, andThen)
 
-import MicroPlode.Click as Click exposing (Click)
+import MicroPlode.Move as Move exposing (Move)
 import MicroPlode.Board as Board
 import MicroPlode.Screen as Screen exposing (Screen)
 
@@ -31,7 +31,6 @@ type Action
   | NoOp
 
 
-
 {-|
 Initializes the model and the context.
 -}
@@ -47,10 +46,12 @@ Updates the current view on each signal tick.
 -}
 update : Action -> (Model, Context) -> (Model, Context)
 update action (game, context) =
-  (case action of
+  case action of
     NoOp ->
       (game, context)
-    -- TODO Also send POST request to service
+    -- TODO Actually, changing the screen must not happen directly as a
+    -- consequence of the user's click but only on receiving the first
+    -- next-turn event from the game service.
     StartGame ->
       (game, { context | screen = Screen.Board })
     BoardAction boardAction ->
@@ -64,7 +65,7 @@ update action (game, context) =
         newBoard = Board.update action game.board
       in
         ({ game | board = newBoard }, context)
-  )
+
 
 {-|
 Renders the game.
@@ -76,6 +77,9 @@ view address (game, context) =
     Screen.Board -> renderBoard address game
 
 
+{-|
+Renders the welcome screen.
+-}
 renderWelcome : Signal.Address Action -> Html
 renderWelcome address =
   let
@@ -93,6 +97,9 @@ renderWelcome address =
     div [ class "game" ] [ content ]
 
 
+{-|
+Renders the board.
+-}
 renderBoard : Signal.Address Action -> Model -> Html
 renderBoard address game =
   let
@@ -115,23 +122,6 @@ uiInputSignal : Signal Action
 uiInputSignal = uiInputMailbox.signal
 
 
-{-|
-Filter & transform uiInputSignal so that it only contains mouse clicks on
-squares.
--}
-boardActionSignal : Signal Click
-boardActionSignal =
-  let
-    filter action =
-      case action of
-        BoardAction boardAction -> Board.actionsToCoordinates boardAction
-        otherwise -> Nothing
-  in
-    Signal.filterMap filter { x = -1, y = -1, player = -1 } uiInputSignal
--- TODO The default value is actually send to the server. How to get rid of
--- that?
-
-
 mergedSignal : Signal Action
 mergedSignal =
   Signal.merge uiInputSignal updateBoardSignal
@@ -152,6 +142,7 @@ main =
     Signal.map (view uiInputMailbox.address) model
 
 
+-- TODO Put Socket.IO handling into a separate module.
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 -- Socket.IO handling:
@@ -168,30 +159,9 @@ port initial : Task x ()
 port initial = socket `andThen` SocketIO.emit "" "Hello I am the MicroPlode client! :-)"
 
 
-{-|
-Outgoing websocket mesages, browser to server.
--}
-port wsToServer : Signal (Task x ())
-port wsToServer =
-  Signal.map
-    (\click ->
-      socket `andThen` SocketIO.emit "click" (encodeClick click)
-    )
-    boardActionSignal
-
-
-encodeClick : Click -> String
-encodeClick click =
-  let
-    object =
-      Json.Encode.object
-        [ ("x", Json.Encode.int click.x)
-        , ("y", Json.Encode.int click.y)
-        , ("player", Json.Encode.int click.player)
-        ]
-  in
-    Json.Encode.encode 0 object
-
+--------------------------------------------------------------------------------
+-- Socket.IO: Server -> Browser:
+--------------------------------------------------------------------------------
 
 updateBoardMailbox : Signal.Mailbox String
 updateBoardMailbox = Signal.mailbox ""
@@ -210,3 +180,102 @@ updateBoardSignal =
 port updateBoardPort : Task x ()
 port updateBoardPort =
   socket `andThen` SocketIO.on "update-board" updateBoardMailbox.address
+
+
+--------------------------------------------------------------------------------
+-- Socket.IO: Browser -> Server:
+--------------------------------------------------------------------------------
+
+{-|
+Filters the general UI input signal for move events (player clicked on a
+square).
+-}
+moveEventSignal : Signal Move
+moveEventSignal =
+  let
+    filter action =
+      case action of
+        BoardAction boardAction -> Board.actionToMove boardAction
+        otherwise -> Nothing
+  in
+    Signal.filterMap filter { x = -1, y = -1, player = -1 } uiInputSignal
+
+
+{-|
+Filters the general UI input signal for game events (like game started).
+-}
+gameEventSignal : Signal Action
+gameEventSignal =
+  let
+    filter action =
+      case action of
+        StartGame -> Just StartGame
+        _ -> Nothing
+  in
+    Signal.filterMap filter NoOp uiInputSignal
+
+
+{-|
+Converts a move event to a task for sending a corresponding message via
+Socket.IO.
+-}
+moveToSocketTask : Move -> Task x ()
+moveToSocketTask action =
+  socket `andThen` SocketIO.emit "move" (encodeMove action)
+
+
+{-|
+Converts a game event to a task for sending a corresponding message via
+Socket.IO.
+-}
+gameEventToSocketTask : Action -> Task x ()
+gameEventToSocketTask action =
+  socket `andThen` SocketIO.emit "game-event" (encodeGameEvent action)
+
+
+{-|
+Encodes a game event as JSON.
+-}
+encodeGameEvent : Action -> String
+encodeGameEvent action =
+  let
+    event = case action of
+      StartGame -> "new-game"
+      _ -> "noop"
+    payload =
+      Json.Encode.object [ ("event", Json.Encode.string event) ]
+  in
+    Json.Encode.encode 0 payload
+
+
+{-|
+Encodes a move as JSON.
+-}
+encodeMove : Move -> String
+encodeMove move =
+  let
+    payload =
+      Json.Encode.object
+        [ ("x", Json.Encode.int move.x)
+        , ("y", Json.Encode.int move.y)
+        , ("player", Json.Encode.int move.player)
+        ]
+  in
+    Json.Encode.encode 0 payload
+
+
+{-|
+Outgoing websocket messages for moves (browser to server).
+-}
+port moveToServerPort : Signal (Task x ())
+port moveToServerPort =
+  Signal.map moveToSocketTask moveEventSignal
+
+
+{-|
+Outgoing websocket messages for game events (browser to server).
+-}
+port gameEventToPort : Signal (Task x ())
+port gameEventToPort =
+  Signal.map gameEventToSocketTask gameEventSignal
+

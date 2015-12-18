@@ -1,16 +1,16 @@
-module MicroPlode.Click
-  ( Click
+module MicroPlode.Move
+  ( Move
   , init) where
 
 
-type alias Click =
+type alias Move =
   { x : Int
   , y : Int
   , player : Int
   }
 
 
-init : Int -> Int -> Int -> Click
+init : Int -> Int -> Int -> Move
 init x y player =
   { x = x
   , y = y

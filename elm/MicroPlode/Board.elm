@@ -4,7 +4,7 @@ module MicroPlode.Board
   , init
   , view
   , update
-  , actionsToCoordinates
+  , actionToMove
   , decodeBoard) where
 
 
@@ -13,7 +13,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Json.Decode as Json exposing ((:=))
 
-import MicroPlode.Click as Click exposing (Click)
+import MicroPlode.Move as Move exposing (Move)
 import MicroPlode.Square as Square
 
 
@@ -92,11 +92,11 @@ renderRow address row =
     tr [] tds
 
 
-actionsToCoordinates : Action -> Maybe Click
-actionsToCoordinates action =
+actionToMove : Action -> Maybe Move
+actionToMove action =
   case action of
-     Click (Square.Increment click) -> Just click
-     otherwise -> Nothing
+    Click (Square.Increment click) -> Just click
+    otherwise -> Nothing
 
 
 decodeBoard : String -> Model
@@ -124,3 +124,4 @@ boardDecoder =
 rowDecoder : Json.Decoder (Array Square.Model)
 rowDecoder =
   Json.array Square.squareDecoder
+

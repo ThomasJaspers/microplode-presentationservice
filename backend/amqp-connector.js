@@ -20,8 +20,30 @@ exports.start = function() {
   establishConnection();
 };
 
+exports.sendNewGameEvent = function() {
+  let newGameEvent = {
+    event: {
+      type: 'new-game',
+      playerList: [{
+        id: "1",
+        type: "human",
+       }, {
+        id: "2",
+        type: "human",
+      }]
+    }
+  };
+  mqHandles.moves.publish('', newGameEvent, {}, errorFlag => {
+    if (!errorFlag) {
+      console.log('amqp-connector published new game event -> success');
+    } else {
+      console.log('amqp-connector published new game event -> error');
+    }
+  });
+  console.log('amqp-connector published new game event', newGameEvent);
+};
+
 exports.sendMoveEvent = function(move) {
-  console.log('move in', move);
   let moveEvent = {
     event: {
       type: 'move',
@@ -33,12 +55,12 @@ exports.sendMoveEvent = function(move) {
   console.log('move event', moveEvent);
   mqHandles.moves.publish('', moveEvent, {}, errorFlag => {
     if (!errorFlag) {
-      console.log('amqp-connector#onClick published -> success');
+      console.log('amqp-connector published move event -> success');
     } else {
-      console.log('amqp-connector#onClick published -> error');
+      console.log('amqp-connector published move event -> error');
     }
   });
-  console.log('amqp-connector#onClick published', moveEvent);
+  console.log('amqp-connector published move event', moveEvent);
 };
 
 function establishConnection() {

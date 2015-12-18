@@ -16,12 +16,33 @@ class SocketIoConnection {
       console.log('MicroPlode client sent:', data);
     });
 
-    this.socket.on('click', data => {
+    this.socket.on('move', data => {
       try {
-        let clickMessage = JSON.parse(data);
-        console.log('click:', clickMessage);
-        amqpConnector.sendMoveEvent(clickMessage);
-        console.log('sent message to AMQP');
+        let message = JSON.parse(data);
+        console.log('receiving move event from socket.io:', message);
+        if (message.player && message.player >= 0 &&
+            message.x && message.x >= 0 &&
+            message.y && message.y >= 0) {
+          amqpConnector.sendMoveEvent(message);
+          console.log('sent move message to AMQP');
+        } else {
+          console.log('ignoring move', message);
+        }
+      } catch (e) {
+        console.error('unparseable Socket.io message: ' + data + ' -- ', e);
+      }
+    });
+
+    this.socket.on('game-event', data => {
+      try {
+        let message = JSON.parse(data);
+        console.log('receiving game from socket.io:', message);
+        if (message.event && message.event === 'new-game') {
+          amqpConnector.sendNewGameEvent(message);
+          console.log('sent new game message to AMQP');
+        } else {
+          console.log('ignoring game event', message);
+        }
       } catch (e) {
         console.error('unparseable Socket.io message: ' + data + ' -- ', e);
       }

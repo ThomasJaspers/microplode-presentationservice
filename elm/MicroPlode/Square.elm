@@ -13,7 +13,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Json.Decode as Json exposing ((:=))
 
-import MicroPlode.Click as Click exposing (Click)
+import MicroPlode.Move as Move exposing (Move)
 
 
 type alias Model =
@@ -25,7 +25,7 @@ type alias Model =
 
 
 type Action
-  = Increment Click
+  = Increment Move
 
 
 {-|
@@ -68,7 +68,7 @@ view address square =
   in
     td
       [ class ("square " ++ player)
-      , onClick address (Increment (Click.init square.x square.y 1)) ]
+      , onClick address (Increment (Move.init square.x square.y 1)) ]
       [ loadText ]
 
 
